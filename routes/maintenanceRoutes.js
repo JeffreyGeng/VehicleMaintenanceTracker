@@ -151,4 +151,52 @@ router.get('/upcoming/:vehicleId', verifyToken, async (req, res) => {
     }
   });
 
+    /**
+ * @swagger
+ * /api/maintenance/all/{vehicleId}:
+ *   get:
+ *     summary: Get all maintenance records for a specific vehicle
+ *     tags: [Maintenance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: vehicleId
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: The ID of the vehicle
+ *     responses:
+ *       200:
+ *         description: List of all maintenance records
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Maintenance'
+ *       401:
+ *         description: No token, authorization denied
+ *       404:
+ *         description: Vehicle not found
+ */
+router.get('/all/:vehicleId', verifyToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { vehicleId } = req.params;
+
+    // Ensure vehicle belongs to the authenticated user
+    const vehicle = await Vehicle.findOne({ where: { id: vehicleId, userId } });
+    if (!vehicle) {
+      return res.status(404).json({ msg: 'Vehicle not found or unauthorized' });
+    }
+
+    const maintenances = await Maintenance.findAll({ where: { vehicleId } });
+    res.status(200).json(maintenances);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server error');
+  }
+});
+
 module.exports = router;
